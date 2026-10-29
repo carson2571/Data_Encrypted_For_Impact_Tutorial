@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Encrypted for Impact — T1486 Tutorial</title>
+  <meta name="description" content="A beginner-friendly tutorial on MITRE ATT&CK T1486, Data Encrypted for Impact (ransomware), for CYBER 266: Adversarial Mindset.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top"><span class="brand-tag">T1486</span> Data Encrypted for Impact</a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav">Sections</button>
+    <nav id="site-nav" class="site-nav">
+      <a href="#intro">Intro</a>
+      <a href="#why">Why</a>
+      <a href="#prereqs">Prerequisites</a>
+      <a href="#how">How it works</a>
+      <a href="#demo">Demo</a>
+      <a href="#example">Real world</a>
+      <a href="#mapping">ATT&amp;CK</a>
+      <a href="#detect">Detection</a>
+      <a href="#defend">Mitigations</a>
+      <a href="#takeaways">Takeaways</a>
+      <a href="#refs">References</a>
+    </nav>
+  </div>
+  <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">CYBER 266 · Adversarial Mindset · Attack Pattern Tutorial</p>
+      <h1>Data Encrypted <span class="hl">for Impact</span></h1>
+      <p class="lede">How ransomware turns a company's own files into a hostage — and what defenders can do about it. Written for someone who is smart but new to security.</p>
+      <div class="hero-meta">
+        <span class="chip">MITRE ATT&amp;CK T1486</span>
+        <span class="chip">Tactic: Impact (TA0040)</span>
+        <span class="chip">~20 min read</span>
+      </div>
+      <div class="locked-files" aria-hidden="true">
+        <div class="file"><span class="fname">budget_2026.xlsx</span><span class="fstate ok">readable</span></div>
+        <div class="file"><span class="fname">thesis_draft.docx</span><span class="fstate ok">readable</span></div>
+        <div class="file"><span class="fname">payroll.db</span><span class="fstate ok">readable</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. INTRO -->
+  <section id="intro" class="section">
+    <div class="wrap">
+      <p class="section-num">01</p>
+      <h2>Introduction and Overview</h2>
+      <p><strong>Data Encrypted for Impact</strong> is what happens when an attacker scrambles the data on a victim's computers so the owner can no longer use it. The attacker keeps the only way to unscramble it and offers to "sell it back." This is the core action behind <dfn>ransomware</dfn> — malicious software that holds data hostage for payment.</p>
+
+      <div class="callout define">
+        <p class="callout-title">Key terms</p>
+        <dl class="terms">
+          <dt>Encryption</dt><dd>Mathematically scrambling data so it can only be read by someone with the correct <em>key</em>. Normally a security tool — here it is used as a weapon.</dd>
+          <dt>Key</dt><dd>A secret value (a long random number) that locks and unlocks encrypted data. No key, no data.</dd>
+          <dt>Ransom note</dt><dd>A message the attacker leaves behind explaining what happened and how to pay.</dd>
+          <dt>Impact</dt><dd>In MITRE ATT&amp;CK, the attacker's final goal: disrupting, destroying, or manipulating systems and data.</dd>
+        </dl>
+      </div>
+
+      <p>Think of it like a burglar who doesn't steal your stuff — they put a padlock on every drawer in your house and mail you a bill for the key. Everything is still <em>there</em>; you just can't open any of it.</p>
+
+      <div class="stat-row">
+        <div class="stat"><span class="stat-big">Impact</span><span class="stat-label">The ATT&amp;CK tactic: the attack's end goal, not its start</span></div>
+        <div class="stat"><span class="stat-big">Win / Mac / Linux</span><span class="stat-label">Plus cloud (IaaS) and VMware ESXi hosts</span></div>
+        <div class="stat"><span class="stat-big">Last step</span><span class="stat-label">Encryption usually happens after the attacker already owns the network</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. WHY -->
+  <section id="why" class="section alt">
+    <div class="wrap">
+      <p class="section-num">02</p>
+      <h2>Why Attackers Use This Technique</h2>
+      <p>Adversarial mindset question: <em>what problem does this solve for the attacker?</em> Stealing data and selling it is slow and uncertain. Encrypting data turns the victim into the buyer — and the victim is desperate.</p>
+
+      <div class="card-grid">
+        <article class="card">
+          <h3>💰 Direct Money</h3>
+          <p>The victim pays the attacker directly, usually in cryptocurrency, which is hard to trace and fast to move.</p>
+        </article>
+        <article class="card">
+          <h3>⏱️ Time Pressure</h3>
+          <p>A hospital, pipeline, or school that can't operate loses money and trust every hour. Downtime pushes people to pay quickly instead of thinking.</p>
+        </article>
+        <article class="card">
+          <h3>🔐 Math Is on Their Side</h3>
+          <p>Modern encryption, done correctly, can't be broken by brute force. If backups fail, the attacker's key may be the only way back.</p>
+        </article>
+        <article class="card">
+          <h3>🧲 Double Extortion</h3>
+          <p>Many groups steal a copy of the data <em>before</em> encrypting it, then threaten to leak it. Even victims with good backups now have a reason to pay.</p>
+        </article>
+        <article class="card">
+          <h3>🏭 It Scales</h3>
+          <p>"Ransomware-as-a-Service" (RaaS) groups rent their tools to affiliates and split the profits, like a criminal franchise.</p>
+        </article>
+        <article class="card">
+          <h3>💥 Sometimes: Pure Destruction</h3>
+          <p>Some "ransomware," like NotPetya (2017), had no working way to decrypt. Encryption was just a disguise for wiping data.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. PREREQS -->
+  <section id="prereqs" class="section">
+    <div class="wrap">
+      <p class="section-num">03</p>
+      <h2>Prerequisites and Assumptions</h2>
+      <p>Encryption is the <strong>last</strong> step. Before an attacker can lock anything, several things already have to be true. Each one is also a place a defender can stop them.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <h3>What the Attacker Needs</h3>
+          <ul class="check">
+            <li><strong>A foothold</strong> — a way in, such as a stolen password, a phishing email, or an unpatched server.</li>
+            <li><strong>Enough privileges</strong> — permission to write to the files that matter (often administrator or domain admin rights).</li>
+            <li><strong>Reach</strong> — access to file shares, servers, virtual machines, or cloud storage, not just one laptop.</li>
+            <li><strong>Time undetected</strong> — attackers often spend days or weeks inside a network before encrypting.</li>
+          </ul>
+        </div>
+        <div class="panel warn">
+          <h3>What the Attack Assumes About the Victim</h3>
+          <ul class="cross">
+            <li>Backups are missing, old, untested, or reachable from the same network (so they get encrypted too).</li>
+            <li>Nobody is watching for unusual activity, like thousands of files changing in minutes.</li>
+            <li>Accounts lack multi-factor authentication (MFA), so one stolen password is enough.</li>
+            <li>The organization values fast recovery more than the ransom amount.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. HOW -->
+  <section id="how" class="section alt">
+    <div class="wrap">
+      <p class="section-num">04</p>
+      <h2>Step-by-Step: How the Attack Works</h2>
+      <p>Here is a typical modern ransomware intrusion, from first access to ransom note. Click a step to expand it. The orange step is T1486 itself; the others are the steps that make it possible.</p>
+
+      <ol class="timeline">
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">1</span>Get In <span class="tid">Initial Access</span></button>
+          <div class="step-body"><p>The attacker gains entry using a phished login, a password leaked in an old breach, an exposed remote-access service (like VPN or RDP), or an unpatched vulnerability.</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">2</span>Look Around and Spread <span class="tid">Discovery · Lateral Movement</span></button>
+          <div class="step-body"><p>They map the network: which servers hold important data, where backups live, and who the administrators are. They move from machine to machine and try to gain admin rights.</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">3</span>Steal a Copy <span class="tid">Exfiltration (optional)</span></button>
+          <div class="step-body"><p>In double-extortion attacks, they upload sensitive files to a server they control. This becomes leverage: "pay, or we publish."</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">4</span>Break the Safety Nets <span class="tid">T1490 · T1489</span></button>
+          <div class="step-body"><p>They delete local backups and Windows "shadow copies" (automatic restore points), disable recovery options, and stop services like databases and backup agents so files aren't locked open. This step is closely tied to encryption — it's how attackers make sure the victim can't simply roll back.</p></div>
+        </li>
+        <li class="step key">
+          <button class="step-head" aria-expanded="false"><span class="step-n">5</span>Encrypt the Data <span class="tid">T1486</span></button>
+          <div class="step-body">
+            <p>Ransomware runs on many machines at once, often at night or on a weekend when fewer people are watching. It walks through folders, encrypts each file, and frequently renames it with a new extension (for example <code>report.docx</code> → <code>report.docx.locked</code>). It usually skips system files so the computer still boots — the victim needs a working machine to read the ransom note.</p>
+            <p>See the diagram below for <em>how</em> the files are locked.</p>
+          </div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">6</span>Demand Payment <span class="tid">Ransom note</span></button>
+          <div class="step-body"><p>A text or HTML file appears in every folder (and sometimes as the desktop wallpaper) with instructions, a deadline, and a payment address or chat portal.</p></div>
+        </li>
+      </ol>
+
+      <h3 class="sub">Inside Step 5: Hybrid Encryption</h3>
+      <p>Encrypting thousands of files needs to be <strong>fast</strong>, but the attacker also needs to be the <strong>only</strong> one who can undo it. Ransomware solves both problems by combining two kinds of encryption:</p>
+
+      <div class="callout define">
+        <dl class="terms">
+          <dt>Symmetric encryption</dt><dd>One key both locks and unlocks (e.g., AES). Very fast. Like a normal house key.</dd>
+          <dt>Asymmetric encryption</dt><dd>Two linked keys (e.g., RSA): a <em>public key</em> that can only lock, and a <em>private key</em> that can unlock. Like a mailbox slot anyone can drop into, but only the owner can open.</dd>
+        </dl>
+      </div>
+
+      <div class="hybrid" role="img" aria-label="Diagram: each file is encrypted with a fast symmetric key; that key is then locked with the attacker's public key; only the attacker's private key can unlock it.">
+        <div class="h-col">
+          <div class="h-box file-box">📄 Your file</div>
+          <div class="h-plus">+</div>
+          <div class="h-box key-box">🔑 Random file key<small>symmetric, made on your PC</small></div>
+          <div class="h-arrow">↓ fast encryption</div>
+          <div class="h-box locked-box">🔒 Encrypted file</div>
+        </div>
+        <div class="h-col">
+          <div class="h-box key-box">🔑 That same file key</div>
+          <div class="h-plus">+</div>
+          <div class="h-box pub-box">📮 Attacker's public key<small>built into the ransomware</small></div>
+          <div class="h-arrow">↓ asymmetric encryption</div>
+          <div class="h-box locked-box">🔒 Locked file key<small>original file key is erased</small></div>
+        </div>
+        <div class="h-col attacker">
+          <div class="h-box priv-box">🗝️ Attacker's private key<small>never leaves the attacker</small></div>
+          <div class="h-arrow">↓ the only thing that can…</div>
+          <div class="h-box">Unlock the file key → unlock your file</div>
+          <p class="h-note">This is exactly what the ransom "buys."</p>
+        </div>
+      </div>
+
+      <p class="note">Why not just find the file key on the disk? Well-built ransomware erases it from memory after use. Poorly built ransomware sometimes doesn't — which is why security researchers have released free decryptors for some families (see <a href="https://www.nomoreransom.org/" target="_blank" rel="noopener">No More Ransom</a>).</p>
+    </div>
+  </section>
+
+  <!-- DEMO -->
+  <section id="demo" class="section">
+    <div class="wrap">
+      <p class="section-num">✦</p>
+      <h2>Try It: See Why the Key Is Everything</h2>
+      <p>This safe, in-browser demo encrypts a sentence you type using AES (the same kind of symmetric encryption from step 5). Nothing leaves your browser and no files are touched. Encrypt something, then try decrypting with the wrong password.</p>
+
+      <div class="demo">
+        <label for="demo-text">Your "file" contents</label>
+        <textarea id="demo-text" rows="3">Q3 payroll: 412 employees, deposit scheduled Friday.</textarea>
+
+        <label for="demo-key">Password used to make the key</label>
+        <input id="demo-key" type="text" value="correct-horse-battery" autocomplete="off">
+
+        <div class="demo-actions">
+          <button id="btn-encrypt" class="btn">🔒 Encrypt</button>
+          <button id="btn-decrypt" class="btn ghost">🔓 Decrypt</button>
+        </div>
+
+        <label>Result</label>
+        <output id="demo-out" class="demo-out">Press Encrypt to see the scrambled data.</output>
+        <p id="demo-status" class="demo-status" aria-live="polite"></p>
+      </div>
+      <p class="note">Notice: changing even one character of the password makes decryption fail completely. There is no "close enough." That's the leverage ransomware relies on — and why backups, not guessing, are the real defense.</p>
+    </div>
+  </section>
+
+  <!-- 5. EXAMPLE -->
+  <section id="example" class="section alt">
+    <div class="wrap">
+      <p class="section-num">05</p>
+      <h2>Real-World Example: Colonial Pipeline (2021)</h2>
+
+      <div class="case">
+        <div class="case-facts">
+          <div><span>When</span>May 7, 2021</div>
+          <div><span>Who</span>DarkSide (RaaS group)</div>
+          <div><span>Victim</span>Largest refined-fuel pipeline in the U.S.</div>
+          <div><span>Ransom paid</span>75 BTC (~$4.4M)</div>
+        </div>
+        <div class="case-story">
+          <ol class="mini-steps">
+            <li><strong>Entry:</strong> Attackers logged into an old VPN account using a password that had been exposed. The account did not require multi-factor authentication.</li>
+            <li><strong>Impact:</strong> DarkSide encrypted business (IT) systems, including billing, and stole roughly 100 GB of data.</li>
+            <li><strong>Response:</strong> Colonial shut down the pipeline itself as a precaution, since it couldn't be sure the operational systems were safe and couldn't bill customers.</li>
+            <li><strong>Fallout:</strong> Fuel deliveries along the East Coast were disrupted for about five days, causing panic buying and shortages.</li>
+            <li><strong>Aftermath:</strong> The U.S. Department of Justice later recovered about 63.7 BTC of the ransom.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="callout lesson">
+        <p class="callout-title">Adversarial lesson</p>
+        <p>The ransomware never touched the pipeline's control systems — encrypting the <em>business</em> side was enough to stop fuel moving. One unused account without MFA led to a national news event.</p>
+      </div>
+
+      <h3 class="sub">Also Worth Knowing: WannaCry (2017)</h3>
+      <p>WannaCry spread on its own like a worm, using a Windows file-sharing vulnerability (EternalBlue, patched by Microsoft in March 2017 as MS17-010). In May 2017 it hit hundreds of thousands of computers in over 150 countries, including the UK's National Health Service, demanding about $300 in Bitcoin per machine. It shows the same technique delivered a completely different way: no stolen password, just an unpatched system.</p>
+    </div>
+  </section>
+
+  <!-- 6. MAPPING -->
+  <section id="mapping" class="section">
+    <div class="wrap">
+      <p class="section-num">06</p>
+      <h2>MITRE ATT&amp;CK Mapping</h2>
+      <p><dfn>MITRE ATT&amp;CK</dfn> is a public catalog of real attacker behavior. <em>Tactics</em> are the attacker's goals ("why"); <em>techniques</em> are how they achieve them ("how").</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Item</th><th>ID</th><th>How it relates</th></tr></thead>
+          <tbody>
+            <tr class="row-key"><td>Data Encrypted for Impact</td><td><a href="https://attack.mitre.org/techniques/T1486/" target="_blank" rel="noopener">T1486</a></td><td>This tutorial's technique. No sub-techniques.</td></tr>
+            <tr><td>Impact (tactic)</td><td><a href="https://attack.mitre.org/tactics/TA0040/" target="_blank" rel="noopener">TA0040</a></td><td>The goal T1486 serves: disrupt availability.</td></tr>
+            <tr><td>Inhibit System Recovery</td><td><a href="https://attack.mitre.org/techniques/T1490/" target="_blank" rel="noopener">T1490</a></td><td>Deleting shadow copies and backups right before encryption.</td></tr>
+            <tr><td>Service Stop</td><td><a href="https://attack.mitre.org/techniques/T1489/" target="_blank" rel="noopener">T1489</a></td><td>Stopping databases and backup services so their files can be encrypted.</td></tr>
+            <tr><td>Valid Accounts</td><td><a href="https://attack.mitre.org/techniques/T1078/" target="_blank" rel="noopener">T1078</a></td><td>Colonial Pipeline's entry point: a legitimate login with a leaked password.</td></tr>
+            <tr><td>Exploitation of Remote Services</td><td><a href="https://attack.mitre.org/techniques/T1210/" target="_blank" rel="noopener">T1210</a></td><td>How WannaCry spread (EternalBlue over SMB).</td></tr>
+            <tr><td>Exfiltration Over C2 Channel</td><td><a href="https://attack.mitre.org/techniques/T1041/" target="_blank" rel="noopener">T1041</a></td><td>Data theft before encryption in double-extortion attacks.</td></tr>
+            <tr><td>Mitigation: Data Backup</td><td><a href="https://attack.mitre.org/mitigations/M1053/" target="_blank" rel="noopener">M1053</a></td><td>The primary mitigation ATT&amp;CK lists for T1486.</td></tr>
+            <tr><td>Mitigation: Behavior Prevention on Endpoint</td><td><a href="https://attack.mitre.org/mitigations/M1040/" target="_blank" rel="noopener">M1040</a></td><td>Endpoint tools that block ransomware-like behavior.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. DETECT -->
+  <section id="detect" class="section alt">
+    <div class="wrap">
+      <p class="section-num">07</p>
+      <h2>Detection Opportunities</h2>
+      <p>Encryption is loud. Thousands of files change in minutes, and the warning signs before it are louder still — if someone is listening.</p>
+
+      <div class="detect-grid">
+        <div class="detect">
+          <h3>📂 Mass File Changes</h3>
+          <p>One process modifying or renaming hundreds of files per minute, or many files suddenly getting the same new extension.</p>
+          <span class="src">Data source: File modification</span>
+        </div>
+        <div class="detect">
+          <h3>🎲 Random-Looking Contents</h3>
+          <p>Encrypted data looks completely random (high <dfn>entropy</dfn>). A document that suddenly turns into noise is a red flag.</p>
+          <span class="src">Data source: File content</span>
+        </div>
+        <div class="detect">
+          <h3>🧯 Recovery Tampering</h3>
+          <p>Commands that delete shadow copies or turn off Windows recovery — rarely legitimate, very common right before encryption.</p>
+          <span class="src">Data source: Command execution</span>
+        </div>
+        <div class="detect">
+          <h3>🪤 Canary Files</h3>
+          <p>Decoy files placed in shared folders that nobody should ever touch. If one changes, something is encrypting everything.</p>
+          <span class="src">Technique: Deception</span>
+        </div>
+        <div class="detect">
+          <h3>🗒️ Ransom Notes</h3>
+          <p>The same new text or HTML file appearing in many directories at once.</p>
+          <span class="src">Data source: File creation</span>
+        </div>
+        <div class="detect">
+          <h3>🌐 Earlier Clues</h3>
+          <p>Odd logins (new location, odd hours), large outbound uploads, and new admin tools appearing — often days before encryption.</p>
+          <span class="src">Data source: Logon session, network traffic</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. DEFEND -->
+  <section id="defend" class="section">
+    <div class="wrap">
+      <p class="section-num">08</p>
+      <h2>Mitigations and Defenses</h2>
+      <p>No single control stops ransomware. Defenders layer protections so that each step in section 04 has a chance to fail.</p>
+
+      <div class="defense">
+        <div class="def-item top">
+          <h3>1 · Offline, Tested Backups</h3>
+          <p>The single most important defense. Follow the <strong>3-2-1 rule</strong>: 3 copies, on 2 types of media, with 1 offline or immutable (can't be changed or deleted, even by an admin). Practice restoring — an untested backup is a hope, not a plan.</p>
+        </div>
+        <div class="def-item">
+          <h3>2 · MFA Everywhere</h3>
+          <p>Especially on VPN, remote desktop, email, and admin accounts. This alone would likely have stopped the Colonial Pipeline entry.</p>
+        </div>
+        <div class="def-item">
+          <h3>3 · Patch Quickly</h3>
+          <p>WannaCry used a bug that had been patched two months earlier. Prioritize internet-facing systems.</p>
+        </div>
+        <div class="def-item">
+          <h3>4 · Least Privilege</h3>
+          <p>Users and service accounts should only be able to change the files they truly need. Fewer admin accounts means less to encrypt.</p>
+        </div>
+        <div class="def-item">
+          <h3>5 · Network Segmentation</h3>
+          <p>Separate networks so one infected laptop can't reach every server — and backups are never reachable from the main network.</p>
+        </div>
+        <div class="def-item">
+          <h3>6 · Endpoint Detection (EDR)</h3>
+          <p>Security software that watches behavior and can kill a process that starts mass-encrypting files.</p>
+        </div>
+        <div class="def-item">
+          <h3>7 · Incident Response Plan</h3>
+          <p>Decide <em>before</em> an attack who to call, how to isolate systems, and how to restore. CISA and the FBI recommend reporting attacks and generally discourage paying.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. TAKEAWAYS -->
+  <section id="takeaways" class="section alt">
+    <div class="wrap">
+      <p class="section-num">09</p>
+      <h2>Key Takeaways</h2>
+      <ul class="takeaways">
+        <li>T1486 uses encryption — normally a protective tool — to deny victims access to their own data.</li>
+        <li>Encryption is the <strong>final</strong> step. Attackers need access, privileges, and time first, and every one of those is a chance to catch them.</li>
+        <li>Hybrid encryption makes ransomware both fast and practically impossible to reverse without the attacker's private key.</li>
+        <li>Double extortion means backups alone don't remove all pressure — preventing data theft matters too.</li>
+        <li>The best defense is boring: offline tested backups, MFA, patching, least privilege, and monitoring.</li>
+      </ul>
+
+      <div class="quiz" id="quiz">
+        <h3>Quick Check</h3>
+        <div class="q" data-answer="b">
+          <p>1. Why does ransomware usually delete shadow copies before encrypting?</p>
+          <button data-choice="a">To free up disk space for encrypted files</button>
+          <button data-choice="b">So the victim can't easily restore files without paying</button>
+          <button data-choice="c">Because shadow copies contain the decryption key</button>
+          <p class="fb"></p>
+        </div>
+        <div class="q" data-answer="a">
+          <p>2. In hybrid encryption, what does the attacker's <em>public</em> key do?</p>
+          <button data-choice="a">Locks each file's symmetric key so only the attacker can unlock it</button>
+          <button data-choice="b">Decrypts files after payment</button>
+          <button data-choice="c">Encrypts the files directly, one by one</button>
+          <p class="fb"></p>
+        </div>
+        <div class="q" data-answer="c">
+          <p>3. Which control would most likely have stopped Colonial Pipeline's initial access?</p>
+          <button data-choice="a">Antivirus on every laptop</button>
+          <button data-choice="b">Encrypting the hard drives</button>
+          <button data-choice="c">Multi-factor authentication on the VPN account</button>
+          <p class="fb"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REFS -->
+  <section id="refs" class="section">
+    <div class="wrap">
+      <p class="section-num">10</p>
+      <h2>References</h2>
+      <ol class="refs">
+        <li>MITRE ATT&amp;CK. "Data Encrypted for Impact, Technique T1486." <a href="https://attack.mitre.org/techniques/T1486/" target="_blank" rel="noopener">attack.mitre.org/techniques/T1486</a></li>
+        <li>MITRE ATT&amp;CK. "Inhibit System Recovery, Technique T1490." <a href="https://attack.mitre.org/techniques/T1490/" target="_blank" rel="noopener">attack.mitre.org/techniques/T1490</a></li>
+        <li>CISA, MS-ISAC, NSA, FBI. "#StopRansomware Guide." <a href="https://www.cisa.gov/stopransomware/ransomware-guide" target="_blank" rel="noopener">cisa.gov/stopransomware/ransomware-guide</a></li>
+        <li>CISA. "The Attack on Colonial Pipeline: What We've Learned &amp; What We've Done Over the Past Two Years." 2023. <a href="https://www.cisa.gov/news-events/news/attack-colonial-pipeline-what-weve-learned-what-weve-done-over-past-two-years" target="_blank" rel="noopener">cisa.gov</a></li>
+        <li>U.S. House Committee on Homeland Security. "Cyber Threats in the Pipeline: Lessons from the Federal Response to the Colonial Pipeline Ransomware Attack." 2021. <a href="https://democrats-homeland.house.gov/activities/hearings/cyber-threats-in-the-pipeline-lessons-from-the-federal-response-to-the-colonial-pipeline-ransomware-attack" target="_blank" rel="noopener">homeland.house.gov</a></li>
+        <li>U.S. Department of Justice. "Department of Justice Seizes $2.3 Million in Cryptocurrency Paid to the Ransomware Extortionists Darkside." June 7, 2021. <a href="https://www.justice.gov/opa/pr/department-justice-seizes-23-million-cryptocurrency-paid-ransomware-extortionists-darkside" target="_blank" rel="noopener">justice.gov</a></li>
+        <li>US-CERT / CISA. "Alert TA17-132A: Indicators Associated With WannaCry Ransomware." 2017. <a href="https://www.cisa.gov/ncas/alerts/TA17-132A" target="_blank" rel="noopener">cisa.gov/ncas/alerts/TA17-132A</a></li>
+        <li>NIST. "IR 8374: Ransomware Risk Management — A Cybersecurity Framework Profile." 2022. <a href="https://csrc.nist.gov/pubs/ir/8374/final" target="_blank" rel="noopener">csrc.nist.gov/pubs/ir/8374/final</a></li>
+        <li>No More Ransom Project (Europol &amp; partners). <a href="https://www.nomoreransom.org/" target="_blank" rel="noopener">nomoreransom.org</a></li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Created by Carson for CYBER 266: Adversarial Mindset · BYU · For educational purposes only.</p>
+    <p><a href="#top">Back to top ↑</a></p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
