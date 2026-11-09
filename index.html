@@ -27,6 +27,7 @@
       <a href="#detect">Detection</a>
       <a href="#defend">Mitigations</a>
       <a href="#takeaways">Takeaways</a>
+      <a href="#lab">Hands-on</a>
       <a href="#refs">References</a>
     </nav>
   </div>
@@ -427,6 +428,94 @@
           <p class="fb"></p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- HANDS-ON LAB -->
+  <section id="lab" class="section">
+    <div class="wrap">
+      <p class="section-num">✦</p>
+      <h2>Hands-On: The rei1 CTF</h2>
+      <p>Reading about T1486 is one thing; doing it in a safe sandbox makes it stick. This repository ships a self-contained Docker CTF, <code>rei-data-encryption</code>, where you take the attacker's seat against a made-up company entirely on your own machine &mdash; nothing leaves <code>localhost</code> and every record is randomly generated. This section gives you the building blocks: a warm-up with the encryption tool, the key-management idea the CTF grades, and fixes for the snags people hit.</p>
+
+      <p><a class="btn" href="https://github.com/BYU-ECE-Software/Cyber-266-Vulnerabilities-F26/tree/main/Data_Encrypted_For_Impact/ctf/rei-data-encryption" target="_blank" rel="noopener">Open the CTF README &rarr;</a></p>
+
+      <h3 class="sub">A &middot; Warm up with GPG on a throwaway file</h3>
+      <p>The CTF uses <code>gpg</code> (GnuPG), a standard command-line encryption tool. Before touching anything that matters, practice on a file you don't care about so the mechanics become muscle memory. Everything here is safe to run inside the CTF container.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <h3>Passphrase (symmetric)</h3>
+          <p>One secret both locks and unlocks. The quickest way to start.</p>
+          <pre><code>echo "hello lab" &gt; /tmp/demo.txt
+
+# lock it with a passphrase (AES-256)
+gpg -c --cipher-algo AES256 /tmp/demo.txt
+# creates /tmp/demo.txt.gpg
+
+# the locked file is just noise
+cat /tmp/demo.txt.gpg
+
+# unlock it again
+gpg -d /tmp/demo.txt.gpg</code></pre>
+        </div>
+        <div class="panel">
+          <h3>Keypair (asymmetric)</h3>
+          <p>A public key locks; only the matching private key unlocks.</p>
+          <pre><code># make a throwaway keypair
+gpg --quick-gen-key "practice-key" default encrypt
+
+# lock the file TO that key
+gpg -e -r "practice-key" /tmp/demo.txt
+# creates /tmp/demo.txt.gpg
+
+# unlock with your private key
+gpg -d /tmp/demo.txt.gpg</code></pre>
+        </div>
+      </div>
+      <p class="note">Same tool, two models &mdash; section 04 explains why real ransomware combines both. Once you can lock and unlock a demo file at will, you understand the core move in this technique.</p>
+
+      <h3 class="sub">B &middot; The idea the CTF really tests: keep a working key</h3>
+      <p>Anyone can scramble files. The technique is Data Encrypted for <strong>Impact</strong> &mdash; the data has to stay recoverable so it can be ransomed. Destroying it outright is a different technique. That distinction is exactly what the CTF checks.</p>
+
+      <div class="callout define">
+        <p class="callout-title">Key management in the CTF</p>
+        <dl class="terms">
+          <dt>The problem</dt><dd>If you encrypt everything and then can't produce the key, nobody &mdash; not even you &mdash; can decrypt. That is a failed operation, and the CTF fails you for it.</dd>
+          <dt>Where your key lives</dt><dd>The grader proves recoverability using your own GnuPG keyring and a folder named <code>~/.decryptor</code>. Used a passphrase? Save it in a file there. Used a keypair? Your private key already counts.</dd>
+          <dt>Why it is separate</dt><dd>Keeping the key off the data you locked mirrors how a real operator holds the one thing the victim has to buy back.</dd>
+        </dl>
+      </div>
+      <p class="note">This is the mirror image of good security: the same act &mdash; encrypting data at rest &mdash; protects a company when <em>they</em> hold the key and extorts them when an attacker does. Who controls the key is the whole story.</p>
+
+      <h3 class="sub">C &middot; Troubleshooting</h3>
+      <p>The usual speed bumps and how to get past them. Click any item to expand.</p>
+      <ol class="timeline">
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">1</span>gpg won't take my passphrase <span class="tid">agent error</span></button>
+          <div class="step-body"><p>In a script or a bare shell, gpg sometimes can't open a passphrase prompt. Run it interactively, or add <code>--pinentry-mode loopback --passphrase "your-pass"</code> to the command.</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">2</span>"no assurance this key belongs to the named user" <span class="tid">trust warning</span></button>
+          <div class="step-body"><p>gpg is noting you haven't marked your throwaway key as trusted. Harmless here &mdash; add <code>--yes --trust-model always</code> to encrypt to it without the prompt.</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">3</span>SSH: "REMOTE HOST IDENTIFICATION HAS CHANGED" <span class="tid">after a reset</span></button>
+          <div class="step-body"><p>You rebuilt the container, so it has a new host key. Clear the old one with <code>ssh-keygen -R "[localhost]:2222"</code>, then connect again.</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">4</span>"Permission denied" writing a file <span class="tid">privileges</span></button>
+          <div class="step-body"><p>You're logged in as <code>ciso</code>, not root. Work inside your home directory (<code>~</code>) and the finance share you were given; no objective needs root.</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">5</span>"command not found: check-mission" <span class="tid">wrong shell</span></button>
+          <div class="step-body"><p>That command only exists inside the container. Connect first: <code>ssh ciso@localhost -p 2222</code>.</p></div>
+        </li>
+        <li class="step">
+          <button class="step-head" aria-expanded="false"><span class="step-n">6</span>I want to start over <span class="tid">reset</span></button>
+          <div class="step-body"><p>Reset the box to its original state with <code>docker compose up -d --force-recreate</code>. To shut it down entirely, <code>docker compose down</code>.</p></div>
+        </li>
+      </ol>
     </div>
   </section>
 
